@@ -15,10 +15,9 @@ cargo install schermz
 ```bash
 A tool to generate a schema for a given JSON file.
 
-Usage: schermz [OPTIONS] --file <FILE>
+Usage: schermz [OPTIONS] <FILE>
 
 Options:
-  -f, --file <FILE>    Path to the JSON file
   -m, --merge-objects  Whether to merge object types into one
   -h, --help           Print help
   -V, --version        Print version
@@ -51,7 +50,7 @@ Here's a simple example:
 ### Without `-m` (default)
 
 ```bash
-schermz -f ./sample.json
+schermz ./sample.json
 
 {
   "info": {
@@ -83,7 +82,7 @@ schermz -f ./sample.json
 ### With `-m`
 
 ```bash
-schermz -m -f ./sample.json
+schermz -m ./sample.json
 
 {
   "info": {
@@ -198,7 +197,7 @@ String values are analyzed based on their possible lengths.
 ```
 
 ```bash
-schermz -f ./sample.json
+schermz ./sample.json
 
 {
   "address": {
