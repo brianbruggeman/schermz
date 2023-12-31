@@ -1,4 +1,61 @@
-//! 
+//! # schermz - JSON Schema Inference Library
+//!
+//! `schermz` is a Rust library designed to analyze JSON data and generate a comprehensive schema representation.
+//! It's particularly useful for understanding the structure of large and complex JSON files, offering insights
+//! into the various data types and their occurrences.
+//!
+//! ## Core Features
+//!
+//! - **Schema Generation**: Create a schema from JSON data, revealing the structure and types present in the JSON.
+//! - **Object Merging**: Option to merge similar objects into a unified schema representation.
+//! - **Type Analysis**: Detailed analysis of value types including strings, numbers, arrays, and objects.
+//! - **Flexible Array Handling**: Arrays are processed to identify the diversity of contained types.
+//! - **Nested Object Support**: Handles complex nested structures within JSON data.
+//!
+//! ## Modules
+//!
+//! - `schema`: Defines the `Schema` struct and related functionality for schema creation and manipulation.
+//! - `schema_object`: Represents individual JSON objects within the schema.
+//! - `schema_object_key`: Handles keys in JSON objects, aiding in structuring the schema.
+//! - `schema_value_type`: Enumerates possible types for values in the schema (e.g., string, number, object).
+//! - `value_type`: Identifies and categorizes the types of values found in the JSON data.
+//!
+//! ## Usage
+//!
+//! The library provides a straightforward API to convert JSON data into a schema representation:
+//!
+//! ```rust
+//! use schermz::Schema;
+//! use serde_json::json;
+//!
+//! let json_data = json!({
+//!     // JSON data here
+//! });
+//! let schema = Schema::from_json(&json_data, true);
+//! ```
+//!
+//! The `from_json` function is the primary entry point, taking a `serde_json::Value` and a boolean flag
+//! to indicate whether similar objects should be merged.
+//!
+//! ## Testing
+//!
+//! The library includes comprehensive tests covering various scenarios and JSON structures, ensuring reliability
+//! and correctness of the schema generation process.
+//!
+//! ## Note
+//!
+//! This library is part of the `schermz` toolset but focuses on the programmatic aspect of schema generation,
+//! making it suitable for integration into other Rust applications.
+//!
+//! ## License
+//!
+//! `schermz` is open-source and available under [license terms here].
+//!
+//! ## Contributions
+//!
+//! Contributions to the library are welcome. Please follow the contribution guidelines outlined in the repository.
+//!
+//! [End of docstring]
 
 mod schema;
 mod schema_object;
