@@ -89,4 +89,13 @@ jobs:
             target
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
       - name: Test code
+        id: run_tests
         run: cargo test
+        env:
+          INSTA_UPDATE: new
+      - name: Upload snapshots of failed tests
+        if: ${{ failure() && steps.run_tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: failed-snapshots
+          path: "**/snapshots/*.snap.new"
