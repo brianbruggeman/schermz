@@ -1,5 +1,6 @@
 ---
-source: src/schema.rs
+source: src/lib.rs
+assertion_line: 278
 expression: "Schema::from_json(&json, false).to_json()"
 ---
 {

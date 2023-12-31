@@ -1,6 +1,7 @@
 ---
-source: src/schema.rs
-expression: "Schema::from_json(&json).to_json()"
+source: src/lib.rs
+assertion_line: 189
+expression: "Schema::from_json(&json, true).to_json()"
 ---
 {
   "address": {
@@ -9,34 +10,12 @@ expression: "Schema::from_json(&json).to_json()"
       {
         "city": {
           "types": [
-            "STRING(6)"
-          ]
-        },
-        "country_code": {
-          "types": [
-            "STRING(2)"
-          ]
-        },
-        "street": {
-          "types": [
-            "STRING(17)"
-          ]
-        },
-        "zip": {
-          "types": [
-            "STRING(5)"
-          ]
-        }
-      },
-      {
-        "city": {
-          "types": [
-            "STRING(8)"
+            "STRING(6, 8)"
           ]
         },
         "country": {
           "types": [
-            "STRING(3)"
+            "STRING(3, 7)"
           ]
         },
         "country_code": {
@@ -46,44 +25,17 @@ expression: "Schema::from_json(&json).to_json()"
         },
         "state": {
           "types": [
-            "STRING(10)"
+            "STRING(10, 11)"
           ]
         },
         "street": {
           "types": [
-            "STRING(14)"
+            "STRING(9, 17)"
           ]
         },
         "zip": {
           "types": [
-            "STRING(8)"
-          ]
-        }
-      },
-      {
-        "city": {
-          "types": [
-            "STRING(7)"
-          ]
-        },
-        "country": {
-          "types": [
-            "STRING(7)"
-          ]
-        },
-        "state": {
-          "types": [
-            "STRING(11)"
-          ]
-        },
-        "street": {
-          "types": [
-            "STRING(9)"
-          ]
-        },
-        "zip": {
-          "types": [
-            "STRING(5)"
+            "STRING(5, 8)"
           ]
         }
       }
@@ -113,13 +65,6 @@ expression: "Schema::from_json(&json).to_json()"
             "STRING(6, 7)"
           ]
         }
-      },
-      {
-        "gender": {
-          "types": [
-            "STRING(6)"
-          ]
-        }
       }
     ]
   },
@@ -129,13 +74,6 @@ expression: "Schema::from_json(&json).to_json()"
       {
         "ARRAY": [
           {
-            "mobile": {
-              "types": [
-                "STRING(10, 11)"
-              ]
-            }
-          },
-          {
             "fax": {
               "types": [
                 "STRING(13)"
@@ -143,7 +81,7 @@ expression: "Schema::from_json(&json).to_json()"
             },
             "mobile": {
               "types": [
-                "STRING(13)"
+                "STRING(10, 13)"
               ]
             }
           },

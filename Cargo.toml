@@ -4,10 +4,10 @@ version = "0.3.3"
 authors = ["trassmann"]
 license = "MIT"
 description = "A tool to generate a schema for a given JSON file."
-readme = "README.md" 
+readme = "README.md"
 homepage = "https://github.com/trassmann/schermz"
 repository = "https://github.com/trassmann/schermz"
-keywords = ["cli", "json", "schema", "model", "generator"] 
+keywords = ["cli", "json", "schema", "model", "generator"]
 edition = "2018"
 categories = ["command-line-utilities"]
 
@@ -18,4 +18,3 @@ itertools = "0.12.0"
 
 [dev-dependencies]
 insta = { version = "1.34.0", features = ["json"] }
- 

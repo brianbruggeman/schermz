@@ -1,6 +1,7 @@
 ---
-source: src/schema.rs
-expression: "Schema::from_json(&json).to_json()"
+source: src/lib.rs
+assertion_line: 100
+expression: "Schema::from_json(&json, true).to_json()"
 ---
 {
   "address": {
