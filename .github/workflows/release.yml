@@ -1,0 +1,94 @@
+name: Upload Binaries
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      # regex: ((.*-)?v?)?[0-9]{1,4}(.[0-9]{1,4}){2}((-|\+).*){0,1}
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit SHA to run the workflow on'
+        required: true
+        default: 'main'
+
+jobs:
+  release:
+    name: release ${{ matrix.config.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          # Linux
+          - {os: ubuntu-latest, bin_name: we-code, command: cargo, target: x86_64-unknown-linux-musl, cross: false}
+          - {os: ubuntu-latest, bin_name: we-code, command: cargo, target: aarch64-unknown-linux-musl, cross: yes}
+          # Macos
+          - {os: macos-latest, bin_name: we-code, command: cargo, target: x86_64-apple-darwin, cross: false}
+          - {os: macos-latest, bin_name: we-code, command: cargo, target: aarch64-apple-darwin, cross: false}
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: "Rust: Install toolchain"
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: ${{ matrix.config.target }}
+
+      - name: "MUSL: Install musl-tools on Linux"
+        if: ${{ contains(matrix.config.target, 'musl') && contains(matrix.config.target, 'linux') }}
+        run: sudo apt-get update --yes && sudo apt-get install --yes musl-tools
+
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+          # (required) Enables access to private dependencies
+          # to build a new one:  ssh-keygen -t ed25519 -C "engineering@wizehire.com"
+          #  Add the private key to this repo as a secret named: SECRET_REPO_DEPLOY_KEY
+          #  Add the public key as a deploy key to we-core
+          ssh-private-key: ${{ secrets.SECRET_REPO_DEPLOY_KEY }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-dependencies
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            target
+          key: ${{ runner.os }}-build-${{ matrix.config.target}}-${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: "Native: Build binary"
+        if: ${{ matrix.config.cross == false }}
+        run: cargo build --release --target=${{ matrix.config.target }}
+
+      - name: "Cross Compile: Build binary"
+        uses: actions-rs/cargo@v1
+        if: ${{ matrix.config.cross }}
+        with:
+          use-cross: true
+          command: build
+          args: --release --target ${{matrix.config.target}}
+
+      - name: Get tag version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Pack binaries
+        run: tar -C ./target/${{ matrix.config.target }}/release -czvf ${{ matrix.config.bin_name }}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.config.target }}.tar.gz ${{ matrix.config.bin_name }}
+
+      - name: Release binaries
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.config.bin_name }}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.config.target }}.*
+          asset_name: ${{ matrix.config.bin_name }}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.config.target }}
+          tag: ${{ github.ref }}
+          file_glob: true
+          overwrite: true
