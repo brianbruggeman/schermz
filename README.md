@@ -1,10 +1,12 @@
 # schermz
 
+![CI](https://github.com/trassmann/schermz/actions/workflows/ci.yml/badge.svg)
+
 A CLI tool to create a schema from a JSON file.
 
-See [INSTALLATION.md](./INSTALLATION.md) for installation instructions.
-See [CONTRIBUTION.md](./CONTRIBUTION.md) for contribution guidelines.
-See [TESTS.md](./TESTS.md) for information about the tests.
+- See [INSTALLATION.md](./INSTALLATION.md) for installation instructions.
+- See [CONTRIBUTION.md](./CONTRIBUTION.md) for contribution guidelines.
+- See [TESTS.md](./TESTS.md) for information about the tests.
 
 ## Usage
 
