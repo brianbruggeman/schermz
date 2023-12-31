@@ -1,118 +1,11 @@
-use itertools::Itertools;
-use serde_json::Value as JsonValue;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone)]
-enum ValueType {
-    Null,
-    Bool,
-    Number,
-    String(usize),
-    Object(SchemaObject),
-    Array(Vec<ValueType>),
-}
+use itertools::Itertools;
+use serde_json::Value as JsonValue;
 
-#[derive(Debug, Clone)]
-struct SchemaObjectKey {
-    pub id: String,
-    pub v_type: ValueType,
-}
-
-#[derive(Debug, Clone)]
-pub struct SchemaObject {
-    keys: Vec<SchemaObjectKey>,
-}
-
-impl ValueType {
-    pub fn from_json(json: &JsonValue) -> Self {
-        match json {
-            JsonValue::Null => Self::Null,
-            JsonValue::Bool(_) => Self::Bool,
-            JsonValue::Number(_) => Self::Number,
-            JsonValue::String(_) => {
-                let str = json.as_str().unwrap();
-                Self::String(str.len())
-            }
-            JsonValue::Object(_) => Self::Object(SchemaObject::from_json(json)),
-            JsonValue::Array(arr) => {
-                let values = arr.iter().map(Self::from_json).collect();
-                Self::Array(values)
-            }
-        }
-    }
-
-    pub fn to_schema_value_type(&self, merge_objects: bool) -> SchemaValueType {
-        match self {
-            ValueType::Null => SchemaValueType::Primitive("NULL".into()),
-            ValueType::Bool => SchemaValueType::Primitive("BOOL".into()),
-            ValueType::Number => SchemaValueType::Primitive("NUMBER".into()),
-            ValueType::Object(obj) => SchemaValueType::Object(Schema::from_objects(
-                "object".into(),
-                vec![obj.clone()],
-                merge_objects,
-            )),
-            ValueType::Array(arr) => {
-                let mut value_types = arr
-                    .iter()
-                    .map(|value_type| value_type.to_schema_value_type(merge_objects))
-                    .collect::<Vec<SchemaValueType>>();
-
-                value_types.dedup();
-
-                SchemaValueType::Array(value_types)
-            }
-            _ => panic!("Invalid value type"),
-        }
-    }
-}
-
-impl SchemaObject {
-    pub fn from_json(json: &JsonValue) -> Self {
-        let mut keys = Vec::new();
-
-        for (key, value) in json.as_object().unwrap() {
-            keys.push(SchemaObjectKey {
-                id: key.clone(),
-                v_type: ValueType::from_json(value),
-            });
-        }
-        Self { keys }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum SchemaValueType {
-    Primitive(String),
-    String(usize, usize),
-    Array(Vec<SchemaValueType>),
-    Object(Schema),
-}
-
-impl SchemaValueType {
-    pub fn to_json(&self) -> JsonValue {
-        match self {
-            SchemaValueType::Primitive(name) => JsonValue::String(name.clone()),
-            SchemaValueType::String(min, max) => {
-                if min == max {
-                    return JsonValue::String(format!("STRING({})", min));
-                }
-
-                JsonValue::String(format!("STRING({}, {})", min, max))
-            }
-            SchemaValueType::Array(v_types) => {
-                let types = v_types
-                    .iter()
-                    .map(|v| v.to_json())
-                    .collect::<Vec<JsonValue>>();
-
-                serde_json::json!({ "ARRAY": types })
-            }
-            SchemaValueType::Object(schema) => schema.to_json(),
-        }
-    }
-}
+use crate::{SchemaObject, SchemaValueType, ValueType};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Schema {
@@ -145,10 +38,7 @@ impl Schema {
             .collect()
     }
 
-    fn create_map(
-        objects: Vec<SchemaObject>,
-        merge_objects: bool,
-    ) -> HashMap<String, Vec<SchemaValueType>> {
+    fn create_map(objects: Vec<SchemaObject>, merge_objects: bool) -> HashMap<String, Vec<SchemaValueType>> {
         let mut map = HashMap::<String, Vec<SchemaValueType>>::new();
         let mut string_lens = HashMap::<String, Vec<usize>>::new();
         let mut object_types = CollectedObjects::new();
@@ -195,7 +85,10 @@ impl Schema {
                         }
                     }
                     ValueType::String(len) => {
-                        string_lens.entry(key.id.clone()).or_default().push(*len);
+                        string_lens
+                            .entry(key.id.clone())
+                            .or_default()
+                            .push(*len);
                     }
                     primitive_type => {
                         let entry = map.entry(key.id.clone()).or_default();
@@ -220,19 +113,15 @@ impl Schema {
             match merge_objects {
                 true => {
                     let name = key.clone();
-                    map.entry(key).or_default().push(SchemaValueType::Object(
-                        Schema::from_objects(name, value, true),
-                    ));
+                    map.entry(key)
+                        .or_default()
+                        .push(SchemaValueType::Object(Schema::from_objects(name, value, true)));
                 }
                 false => {
                     for objects_group in Self::group_objects_by_keys_fingerprint(value) {
                         map.entry(key.clone())
                             .or_default()
-                            .push(SchemaValueType::Object(Schema::from_objects(
-                                key.clone(),
-                                objects_group,
-                                false,
-                            )));
+                            .push(SchemaValueType::Object(Schema::from_objects(key.clone(), objects_group, false)));
                     }
                 }
             }
@@ -248,11 +137,7 @@ impl Schema {
                 }
                 false => {
                     for objects_group in Self::group_objects_by_keys_fingerprint(value) {
-                        all_array_types.push(SchemaValueType::Object(Schema::from_objects(
-                            key.clone(),
-                            objects_group,
-                            false,
-                        )));
+                        all_array_types.push(SchemaValueType::Object(Schema::from_objects(key.clone(), objects_group, false)));
                     }
                 }
             }
@@ -273,7 +158,7 @@ impl Schema {
         map
     }
 
-    fn from_objects(name: String, objects: Vec<SchemaObject>, merge_objects: bool) -> Self {
+    pub(crate) fn from_objects(name: String, objects: Vec<SchemaObject>, merge_objects: bool) -> Self {
         Self {
             name,
             map: Self::create_map(objects, merge_objects),
@@ -300,11 +185,7 @@ impl Schema {
 
     pub fn from_json(json: &JsonValue, merge_objects: bool) -> Self {
         match json {
-            JsonValue::Object(_) => Self::from_objects(
-                "root".into(),
-                vec![SchemaObject::from_json(json)],
-                merge_objects,
-            ),
+            JsonValue::Object(_) => Self::from_objects("root".into(), vec![SchemaObject::from_json(json)], merge_objects),
             JsonValue::Array(_) => {
                 let objects = json
                     .as_array()
